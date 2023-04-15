@@ -7,6 +7,7 @@ const canvasHeight = 200
 canvCtx.canvas.width = canvasWidth
 canvCtx.canvas.height = canvasHeight
 
+const startingPositionId = 25
 const unit = 25
 const numSquaresX = 8
 const numSquaresY = 8
@@ -15,7 +16,7 @@ const square = {
   h: 25
 };
 
-let squareNumber = 0
+let squareId = 0
 
 let grid = []
 
@@ -26,13 +27,14 @@ const walls = [
 
 drawGrid()
 
+drawCharacterStartPosition()
+
 canv.addEventListener('click', handleGridClick)
 
 function drawGrid() {
-
   // Reset canvas
   grid = []
-  squareNumber = 0
+  squareId = 0
   canvCtx.clearRect(0, 0, canvasWidth, canvasHeight);
 
   // Draw grid
@@ -46,7 +48,7 @@ function drawGrid() {
       canvCtx.stroke()
 
       // Draw walls
-      if (walls.includes(squareNumber)) {
+      if (walls.includes(squareId)) {
         canvCtx.fillStyle = 'lightgrey'
         canvCtx.fillRect(unit * j, unit * i, square.w, square.h)
       }
@@ -54,56 +56,66 @@ function drawGrid() {
       // Write unit number
       canvCtx.fillStyle = 'black'
       canvCtx.font = '12px Arial'
-      canvCtx.fillText(`${squareNumber}`, unit * j, unit + unit * i)
+      canvCtx.fillText(`${squareId}`, unit * j, unit + unit * i)
 
       grid.push({
-        squareNumber,
-        tlCoord: {
-          x: unit * j,
-          y: unit * i
-        },
-        trCoord: {
-          x: unit * j + unit,
-          y: unit * i
-        },
-        blCoord: {
-          x: unit * j,
-          y: unit * i + unit
-        },
-        brCoord: {
-          x: unit * j + unit,
-          y: unit * i + unit,
+        squareId,
+        coords: {
+          tl: {
+            x: unit * j,
+            y: unit * i
+          },
+          tr: {
+            x: unit * j + unit,
+            y: unit * i
+          },
+          bl: {
+            x: unit * j,
+            y: unit * i + unit
+          },
+          br: {
+            x: unit * j + unit,
+            y: unit * i + unit,
+          }
         }
       })
-      squareNumber += 1;
+      squareId += 1;
     }
   }
 }
 
+function drawCharacterStartPosition() {
+  // Draw character
+  const startingPosition = grid.find(gridItem => gridItem.squareId === startingPositionId)
+  canvCtx.beginPath()
+  canvCtx.arc(startingPosition.coords.bl.x + square.w / 2, startingPosition.coords.bl.y - square.h / 2, square.w / 2, 0, 2 * Math.PI)
+  canvCtx.fill()
+
+}
+
 function handleGridClick(e) {
-
-
   let x = e.offsetX
   let y = e.offsetY
 
-  const clickedSquare = grid.find(({ blCoord, brCoord, tlCoord, trCoord }) => {
-    return tlCoord.x <= x
-      && blCoord.x <= x
-      && tlCoord.y <= y
-      && trCoord.y <= y
-      && trCoord.x >= x
-      && brCoord.x >= x
-      && blCoord.y >= y
-      && brCoord.y >= y
+  const clickedSquare = grid.find(({ coords }) => {
+    return coords.tl.x <= x
+      && coords.bl.x <= x
+      && coords.tl.y <= y
+      && coords.tr.y <= y
+      && coords.tr.x >= x
+      && coords.br.x >= x
+      && coords.bl.y >= y
+      && coords.br.y >= y
   })
 
-  if (walls.includes(clickedSquare.squareNumber)) return
+  if (walls.includes(clickedSquare.squareId)) return
+
   drawGrid()
 
-  // Fill clicked square
+  // Draw goal
   canvCtx.beginPath()
-  canvCtx.fillStyle = 'black'
-  canvCtx.arc(clickedSquare.blCoord.x + square.w / 2, clickedSquare.blCoord.y - square.h / 2, square.w / 2, 0, 2 * Math.PI)
-  canvCtx.fill()
-
+  canvCtx.fillStyle = '#FFC8C8'
+  canvCtx.fillRect(clickedSquare.coords.bl.x, clickedSquare.coords.bl.y - square.h, square.w, square.h)
+  canvCtx.fillStyle = '#181818'
+  canvCtx.fillText('Goal', clickedSquare.coords.bl.x + 3, clickedSquare.coords.bl.y - square.h + 12, square.w - 6)
 }
